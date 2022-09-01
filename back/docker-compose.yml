@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  api:
+    image: "node:17"
+    container_name: "coton_api_${NODE_ENV}"
+    environment:
+      - NODE_ENV:${NODE_ENV}
+      - PORT:${PORT}
+    # build:
+    #   context: ./api
+    #   target: "${NODE_ENV}"
+    #   dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - ${PORT}:${PORT}
+    working_dir: /usr/src/api
+    volumes:
+      - ./api:/usr/src/api
+      - /usr/src/api/node_modules
+    command: sleep infinity
+    # yarn && yarn start:${NODE_ENV}
+
+networks:
+  coton-network:
