@@ -1,4 +1,20 @@
 {
-  "singleQuote": true,
-  "trailingComma": "all"
+  "formatOnSave": true,
+  "printWidth": 100,
+  "singleQuote": false,
+
+  "importOrder": [
+    "^@nestjs/(.*)$",
+    "^@(.*)$",
+    "lodash",
+    "luxon",
+    ".interface",
+    ".service",
+    ".constant",
+    "^(.*)$"
+  ],
+  "importOrderSeparation": true,
+  "importOrderSortSpecifiers": true,
+
+  "importOrderParserPlugins": ["typescript", "decorators-legacy"]
 }
