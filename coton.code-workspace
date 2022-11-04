@@ -1,0 +1,44 @@
+{
+    "folders": [
+      {
+        "path": "./back",
+        "name": "Docker API"
+      },
+      {
+        "path": "./back/api",
+        "name": "API"
+      },
+      {
+        "path": "./bdd",
+        "name": "BDD"
+      },
+      {
+        "path": ".",
+        "name": "Other"
+      },
+    ],
+    "settings": {
+      "editor.formatOnSave": true,
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+      },
+      "typescript.preferences.useAliasesForRenames": false,
+      "javascript.preferences.useAliasesForRenames": false,
+      "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+      }
+    },
+    "extensions": {
+      "recommendations": [
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "ms-azuretools.vscode-docker",
+        "mikestead.dotenv",
+        "mintlify.document",
+        "syler.sass-indented",
+        "wayou.vscode-todo-highlight"
+      ]
+    }
+  }
+  
