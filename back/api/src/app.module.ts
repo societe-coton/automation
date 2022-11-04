@@ -2,11 +2,11 @@ import { Module } from "@nestjs/common";
 
 import { PrismaService } from "./prisma.service";
 
-import { GitController } from "./core/git/git.controller";
+import { CoreModule } from "./core/core.module";
 
 @Module({
-  imports: [],
-  controllers: [GitController],
+  imports: [CoreModule],
+  controllers: [],
   providers: [PrismaService],
 })
 export class AppModule {}
