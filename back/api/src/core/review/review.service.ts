@@ -6,12 +6,12 @@ export class ReviewService {
   constructor(private readonly notion: NotionService) {}
 
   async onModuleInit() {
-    // GET all clients database
+    // 1. Get all Notion DB
     const database = await this.notion.databases.query({
       database_id: process.env.NOTION_DATABASE_ID,
     });
 
-    // Filter clients Coton is actually working with
+    // 2. Filter clients Coton is actually working with
     const currentClientsPages = database.results.filter((data) => {
       const projectStatus = data.properties['Project status'];
       const name = projectStatus && projectStatus['select'].name;
@@ -21,56 +21,52 @@ export class ReviewService {
     // Get ID for each page
     const pagesID = currentClientsPages.map((page) => page.id);
 
-    // Get Blocks of every Work In Progress client
     const blocks = [];
     for (const block_id of pagesID) {
       const block = await this.notion.blocks.children.list({ block_id });
-      blocks.push(block);
+
+      blocks.push(...block.results);
     }
 
-    // const test = await this.notion.blocks.children.list({
-    //   block_id: '9a2c2daa-dc56-4741-bce2-b4d1fe903aae',
-    // });
-    // console.log(
-    //   '🚀 ~ file: review.service.ts ~ line 35 ~ ReviewService ~ onModuleInit ~ test',
-    //   test.results[0]['quote'].text,
-    // );
+    // 3. Get everything inside "Pages" dropdown menu
+    // Get all blocks having a heading
+    const headingBlocks = blocks.filter((block) => block.heading_1);
 
-    // console.log(blocks[0].results[0].heading_1);
-    const pagesMenu = blocks.map((block) => {
-      const headingBlocks = block.results.filter((b) => b.heading_1);
-      const headingBlocksWithPageAsTitle = headingBlocks.filter((b) =>
-        b.heading_1.text.filter((h) => h.text.content === 'Pages'),
-      );
-      return headingBlocksWithPageAsTitle;
-    });
-    console.log(
-      '🚀 ~ file: review.service.ts ~ line 47 ~ ReviewService ~ pagesMenu ~ pagesMenu',
-      pagesMenu,
+    // Filter all blocks having "Pages" as heading name
+    const pagesBlock = headingBlocks.filter(
+      (hb) => hb.heading_1.text[0].text.content === 'Pages',
     );
 
-    // const test = pagesMenu.map((e) => e.map((f) => f.heading_1.text));
-    // console.log(
-    //   '🚀 ~ file: review.service.ts ~ line 46 ~ ReviewService ~ pagesMenu ~ headingBlocksWithPageAsTitle',
-    //   test.map((e) => e.map((f) => f.map((g) => console.log(g.text)))),
-    // );
+    // Getting ID's
+    const pagesBlockID = pagesBlock.map((pb) => pb.id).filter((e) => e.length);
 
-    // const pagesMenuId = pagesMenu.map((pageMenu) => pageMenu.id);
+    // Finding pages by ID
+    const pages = [];
+    for (const block_id of pagesBlockID) {
+      const page = await this.notion.blocks.children.list({
+        block_id,
+      });
+      pages.push(...page.results);
+    }
 
-    // console.log(
-    //   '🚀 ~ file: review.service.ts ~ line 39 ~ ReviewService ~ pagesMenu ~ pagesMenu',
-    //   pagesMenu,
-    // );
-    // console.log(blocks[0].results.map((res) => res.heading_1));
-    // const blocks = await this.notion.blocks.children.list({
-    //   block_id: '3ad619fe6bec41ca8106e736ec666a43',
-    // });
+    // 4. Get "Working Days" calendar block
+    const pagesWithChildDatabase = pages.filter((p) => p.child_database);
+    const pagesWithWorkingDays = pagesWithChildDatabase.filter(
+      (p) => p.child_database.title === 'Working days',
+    );
 
-    // const result = blocks.results.map((res) => res['heading_1']);
-    // console.log(
-    //   '🚀 ~ file: review.service.ts ~ line 23 ~ ReviewService ~ onModuleInit ~ blocks',
-    //   blocks,
-    // );
-    // console.log('result', result[0].text);
+    const pagesWithWorkingDaysID = pagesWithWorkingDays.map((p) => p.id);
+
+    const workingDaysPages = [];
+    for (const database_id of pagesWithWorkingDaysID) {
+      const page = await this.notion.databases.query({
+        database_id,
+      });
+      workingDaysPages.push(...page.results);
+    }
+    console.log(
+      '🚀 ~ file: review.service.ts ~ line 66 ~ ReviewService ~ onModuleInit ~ workingDaysPages',
+      workingDaysPages.length,
+    );
   }
 }
