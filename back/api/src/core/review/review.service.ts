@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Client } from '@notionhq/client';
 import {
   BlockObjectResponse,
@@ -14,19 +15,24 @@ import {
 export class ReviewService {
   private notion: Client;
 
-  constructor() {
+  constructor(private readonly configService: ConfigService) {
     this.notion = new Client({ auth: process.env.NOTION_KEY });
   }
 
   async onModuleInit() {
     // 1. Get all Notion DB
-    const database_id: string = process.env.NOTION_DATABASE_ID;
+    const database_id = this.configService.get<string>('notion.databaseID');
+    if (!database_id) throw new Error('No database ID found in config file');
+
     const databases:
       | PageObjectResponse[]
       | (PageObjectResponse | PartialPageObjectResponse)[] =
       await this.notion.databases
         .query({
           database_id,
+        })
+        .catch((error) => {
+          throw new Error(error);
         })
         .then((result: QueryDatabaseResponse) => result.results);
 

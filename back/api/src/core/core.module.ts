@@ -1,11 +1,9 @@
-import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
-import { NotionService } from 'src/notion/notion.service';
 import { ReviewService } from './review/review.service';
 
 @Module({
-  imports: [HttpModule],
+  imports: [],
   controllers: [],
-  providers: [ReviewService, NotionService],
+  providers: [ReviewService],
 })
 export class CoreModule {}
