@@ -2,6 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Client } from '@notionhq/client';
 import {
+  CHILD_DATABASE,
+  HEADING_1,
+  PAGES,
+  PROJECT_STATUS,
+  SELECT,
+  WIP,
+  WORKING_DAYS,
+} from 'src/const/const.notion';
+import {
   BlockObjectResponse,
   ListBlockChildrenResponse,
   PageObjectResponse,
@@ -32,7 +41,7 @@ export class ReviewService {
           database_id,
         })
         .catch((error) => {
-          throw new Error(error);
+          throw new Error(`Connexion à l'API Notion impossible : ${error}`);
         })
         .then((result: QueryDatabaseResponse) => result.results);
 
@@ -41,58 +50,78 @@ export class ReviewService {
       | PageObjectResponse
       | PartialPageObjectResponse
     )[] = databases.filter((data) => {
-      const projectStatus = data.properties['Project status'];
-      const name = projectStatus && projectStatus['select'].name;
-      return name === 'Work in Progress';
+      const projectStatus = data.properties[PROJECT_STATUS];
+      const name = projectStatus[SELECT]?.name;
+
+      return name === WIP;
     });
 
     // Get ID for each page
     const pagesID: string[] = currentClientsPages.map((page) => page.id);
-    const blocks: (PartialBlockObjectResponse | BlockObjectResponse)[] = [];
-    for (const block_id of pagesID) {
-      const block = await this.notion.blocks.children
-        .list({ block_id })
-        .then((b: ListBlockChildrenResponse) => b.results);
-      blocks.push(...block);
-    }
+    const blocks = await Promise.all(
+      pagesID.map((block_id) =>
+        this.notion.blocks.children
+          .list({ block_id })
+          .then((b: ListBlockChildrenResponse) => b.results),
+      ),
+    );
+    const flattenedBlocks: (
+      | PartialBlockObjectResponse
+      | BlockObjectResponse
+    )[] = blocks.flatMap((e) => e);
 
     // 3. Get everything inside "Pages" dropdown menu
     // Get all blocks having a heading
-    const headingBlocks = blocks.filter((block) => block['heading_1']);
+    const headingBlocks = flattenedBlocks.filter((block) => block[HEADING_1]);
+
     // Filter all blocks having "Pages" as heading name
     const pagesBlock = headingBlocks.filter(
-      (hb) => hb['heading_1'].rich_text[0].text.content === 'Pages',
+      (hb) => hb[HEADING_1].rich_text[0].text.content === PAGES,
     );
+
     // Getting ID's
-    const pagesBlockID = pagesBlock.map((pb) => pb.id).filter((e) => e.length);
+    const pagesBlockID: string[] = pagesBlock
+      .map((pb) => pb.id)
+      .filter((e) => !!e.length);
+
     // Finding pages by ID
-    const pages: (PartialBlockObjectResponse | BlockObjectResponse)[] = [];
-    for (const block_id of pagesBlockID) {
-      const page = await this.notion.blocks.children
-        .list({ block_id })
-        .then((result: ListBlockChildrenResponse) => result.results);
-      pages.push(...page);
-    }
+    const pages = await Promise.all(
+      pagesBlockID.map((block_id) =>
+        this.notion.blocks.children
+          .list({ block_id })
+          .then((result: ListBlockChildrenResponse) => result.results),
+      ),
+    );
+    const flattenedPages = pages.flatMap((e) => e);
 
     // 4. Get "Working Days" calendar block
-    const pagesWithChildDatabase = pages.filter((p) => p['child_database']);
+    // Filter every page having a child_database
+    const pagesWithChildDatabase = flattenedPages.filter(
+      (p) => p[CHILD_DATABASE],
+    );
     const pagesWithWorkingDays = pagesWithChildDatabase.filter(
-      (p) => p['child_database'].title === 'Working days',
+      (p) => p[CHILD_DATABASE].title === WORKING_DAYS,
     );
     const pagesWithWorkingDaysID = pagesWithWorkingDays.map((p) => p.id);
-    const workingDaysPages = [];
 
-    for (const database_id of pagesWithWorkingDaysID) {
-      const page = await this.notion.databases
-        .query({
-          database_id,
-          filter: {
-            timestamp: 'created_time',
-            created_time: { past_week: {} },
-          },
-        })
-        .then((result) => result.results);
-      workingDaysPages.push(...page);
-    }
+    // Get Working Days
+    const workingDaysPages = await Promise.all(
+      pagesWithWorkingDaysID.map((database_id) =>
+        this.notion.databases
+          .query({
+            database_id,
+            filter: {
+              timestamp: 'created_time',
+              created_time: { past_week: {} },
+            },
+          })
+          .then((result) => result.results),
+      ),
+    );
+    const workingDays = workingDaysPages.flatMap((e) => e);
+    console.log(
+      '🚀 ~ file: review.service.ts ~ line 110 ~ ReviewService ~ onModuleInit ~ workingDaysPages',
+      workingDays,
+    );
   }
 }
