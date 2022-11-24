@@ -28,7 +28,7 @@ export class ReviewService {
     this.notion = new Client({ auth: process.env.NOTION_KEY });
   }
 
-  async onModuleInit() {
+  async getWorkingDays() {
     // 1. Get all Notion DB
     const database_id = this.configService.get<string>('notion.databaseID');
     if (!database_id) throw new Error('No database ID found in config file');
@@ -119,9 +119,7 @@ export class ReviewService {
       ),
     );
     const workingDays = workingDaysPages.flatMap((e) => e);
-    console.log(
-      '🚀 ~ file: review.service.ts ~ line 110 ~ ReviewService ~ onModuleInit ~ workingDaysPages',
-      workingDays,
-    );
+
+    return workingDays;
   }
 }
