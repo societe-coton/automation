@@ -1,7 +1,8 @@
-import { Controller, Get } from '@nestjs/common';
-import { ReviewService } from './review.service';
+import { Controller, Get } from "@nestjs/common";
 
-@Controller('reviews')
+import { ReviewService } from "./review.service";
+
+@Controller("reviews")
 export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
   @Get()
