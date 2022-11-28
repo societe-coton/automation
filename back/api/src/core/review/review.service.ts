@@ -12,8 +12,8 @@ import {
   TextRichTextItemResponse,
 } from "@notionhq/client/build/src/api-endpoints";
 
-import { PAGES, PROJECT_STATUS, WIP, WORKING_DAYS } from "src/const/const.notion";
-import { SelectObjectResponse } from "src/types/notion.type";
+import { PAGES, PROJECT_STATUS, SENT_TO_CLIENT, WIP, WORKING_DAYS } from "src/const/const.notion";
+import { SelectObjectResponse, StatusObjectResponse } from "src/types/notion.type";
 
 // This service gets all working days and send an email of daily recap to the client
 @Injectable()
@@ -24,7 +24,7 @@ export class ReviewService {
     this.notion = new Client({ auth: process.env.NOTION_KEY });
   }
 
-  async getWorkingDays() {
+  async getNotSentWorkingDays() {
     // 1. Get all Notion DB
     const database_id = this.configService.get<string>("notion.databaseID");
     if (!database_id) throw new Error("No database ID found in config file");
@@ -113,6 +113,12 @@ export class ReviewService {
     );
     const workingDays: PageObjectResponse[] = workingDaysPages.flatMap((e) => e);
 
-    return workingDays;
+    const notSentWorkingDays = workingDays.filter((workingDay) => {
+      const status = workingDay.properties[SENT_TO_CLIENT] as StatusObjectResponse;
+
+      return status?.status.name === "Not Sent";
+    });
+
+    return notSentWorkingDays;
   }
 }
