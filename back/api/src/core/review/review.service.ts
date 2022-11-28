@@ -5,6 +5,7 @@ import { Client, NotionErrorCode } from "@notionhq/client";
 import {
   BlockObjectResponse,
   ChildDatabaseBlockObjectResponse,
+  DatabaseObjectResponse,
   Heading1BlockObjectResponse,
   ListBlockChildrenResponse,
   PageObjectResponse,
@@ -119,6 +120,14 @@ export class ReviewService {
       return status?.status.name === "Not Sent";
     });
 
-    return notSentWorkingDays;
+    const workingDaysID = notSentWorkingDays.map((workingDay) => workingDay.id);
+
+    const wdb = await Promise.all(
+      workingDaysID.map((block_id) =>
+        this.notion.blocks.children.list({ block_id }).then((result) => result)
+      )
+    );
+
+    return wdb;
   }
 }
