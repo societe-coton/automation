@@ -15,3 +15,18 @@ export interface SelectPropertyResponse {
   name: string;
   color: string;
 }
+
+export interface DailyReview {
+  communicationChannel: CommunicationChannel;
+  review: Review;
+}
+
+interface CommunicationChannel {
+  type: string;
+  token: string;
+  name: string;
+}
+
+interface Review {
+  name: string;
+}
