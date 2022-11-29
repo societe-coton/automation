@@ -123,7 +123,6 @@ export class ReviewService {
           .then((result) => result.results as PageObjectResponse[])
       )
     );
-    // const workingDays: PageObjectResponse[] = workingDaysPages.flatMap((e) => e);
 
     const notSentWorkingDays: PageObjectResponse[][] = workingDaysPages.map((e) =>
       e.filter((workingDay) => {
