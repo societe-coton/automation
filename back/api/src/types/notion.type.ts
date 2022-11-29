@@ -4,6 +4,12 @@ export interface SelectObjectResponse {
   id: string;
 }
 
+export interface StatusObjectResponse {
+  type: "status";
+  status: SelectPropertyResponse | null;
+  id: string;
+}
+
 export interface SelectPropertyResponse {
   id: string;
   name: string;
