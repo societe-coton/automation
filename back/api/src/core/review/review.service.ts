@@ -1,16 +1,16 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 
-import { Client, NotionErrorCode } from "@notionhq/client";
+import { Client } from "@notionhq/client";
 import {
   BlockObjectResponse,
   ChildDatabaseBlockObjectResponse,
   Heading1BlockObjectResponse,
-  ListBlockChildrenResponse,
   PageObjectResponse,
-  QueryDatabaseResponse,
   TextRichTextItemResponse,
 } from "@notionhq/client/build/src/api-endpoints";
+
+import { NotionService } from "../notion/notion.service";
 
 import {
   COMMUNICATION_CHANNELS,
@@ -20,14 +20,21 @@ import {
   WIP,
   WORKING_DAYS,
 } from "src/const/const.notion";
-import { SelectObjectResponse, StatusObjectResponse } from "src/types/notion.type";
+import {
+  RelationObjectResponse,
+  SelectObjectResponse,
+  StatusObjectResponse,
+} from "src/types/notion.type";
 
 // This service gets all working days and send an email of daily recap to the client
 @Injectable()
 export class ReviewService {
   private notion: Client;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly notionService: NotionService
+  ) {
     this.notion = new Client({ auth: process.env.NOTION_KEY });
   }
 
@@ -36,17 +43,9 @@ export class ReviewService {
     const database_id = this.configService.get<string>("notion.databaseID");
     if (!database_id) throw new Error("No database ID found in config file");
 
-    const databases: PageObjectResponse[] = await this.notion.databases
-      .query({
-        database_id,
-      })
-      .catch((error: NotionErrorCode) => {
-        throw new Error(`Connexion à l'API Notion impossible : ${error}`);
-      })
-      .then((result: QueryDatabaseResponse) => result.results as unknown as PageObjectResponse[]);
+    const databases: PageObjectResponse[] = await this.notionService.getDatabase(database_id);
 
     // 2. Filter clients Coton is actually working with
-
     const currentClientsPages: PageObjectResponse[] = databases.filter(
       (data: PageObjectResponse) => {
         const projectStatus = data.properties[PROJECT_STATUS] as SelectObjectResponse;
@@ -62,14 +61,10 @@ export class ReviewService {
 
     // Get ID for each page
     const pagesID: string[] = currentClientsPages.map((page) => page.id);
-    const blocks: BlockObjectResponse[][] = await Promise.all(
-      pagesID.map((block_id) =>
-        this.notion.blocks.children
-          .list({ block_id })
-          .then((result: ListBlockChildrenResponse) => result.results as BlockObjectResponse[])
-      )
+    const currentClientsBlocks: BlockObjectResponse[][] = await this.notionService.getManyBlock(
+      pagesID
     );
-    const flattenedBlocks: BlockObjectResponse[] = blocks.flatMap((e) => e);
+    const flattenedBlocks = currentClientsBlocks.flatMap((e) => e);
 
     // 3. Get everything inside "Pages" dropdown menu
     // Get all blocks having a heading
@@ -86,18 +81,11 @@ export class ReviewService {
     // Getting ID's
     const pagesBlockID: string[] = pagesBlock.map((pb) => pb.id).filter((e) => !!e.length);
 
-    // Finding pages by ID
-    const pages: ChildDatabaseBlockObjectResponse[][] = await Promise.all(
-      pagesBlockID.map((block_id) =>
-        this.notion.blocks.children
-          .list({ block_id })
-          .then(
-            (result: ListBlockChildrenResponse) =>
-              result.results as ChildDatabaseBlockObjectResponse[]
-          )
-      )
+    // Finding pages by I
+    const pages = await this.notionService.getManyBlock<ChildDatabaseBlockObjectResponse>(
+      pagesBlockID
     );
-    const flattenedPages: ChildDatabaseBlockObjectResponse[] = pages.flatMap((e) => e);
+    const flattenedPages = pages.flatMap((e) => e);
 
     // 4. Get "Working Days" calendar block
     // Filter every page having a child_database
@@ -110,18 +98,13 @@ export class ReviewService {
     const pagesWithWorkingDaysID = pagesWithWorkingDays.map((p) => p.id);
 
     // Get Working Days
-    const workingDaysPages: PageObjectResponse[][] = await Promise.all(
-      pagesWithWorkingDaysID.map((database_id) =>
-        this.notion.databases
-          .query({
-            database_id,
-            filter: {
-              timestamp: "created_time",
-              created_time: { past_week: {} },
-            },
-          })
-          .then((result) => result.results as PageObjectResponse[])
-      )
+    const filter = {
+      timestamp: "created_time",
+      created_time: { past_week: {} },
+    };
+    const workingDaysPages: PageObjectResponse[][] = await this.notionService.getManyDatabase(
+      pagesWithWorkingDaysID,
+      filter
     );
 
     const notSentWorkingDays: PageObjectResponse[][] = workingDaysPages.map((e) =>
@@ -132,10 +115,24 @@ export class ReviewService {
       })
     );
 
-    const workingDaysWithCommunicationChannels = notSentWorkingDays.map((workingDay) =>
-      workingDay.map((wd) => {
-        return { id: wd.id, communicationChannels: wd.properties[COMMUNICATION_CHANNELS] };
-      })
+    const workingDaysWithCommunicationChannels = await Promise.all(
+      notSentWorkingDays.map((workingDay) =>
+        Promise.all(
+          workingDay.map(async (wd) => {
+            const communicationChannel = wd.properties[
+              COMMUNICATION_CHANNELS
+            ] as RelationObjectResponse;
+
+            const communicationID = communicationChannel.relation[0]?.id;
+            if (!communicationID) return;
+
+            return {
+              content: await this.notionService.getBlock(wd.id),
+              communicationChannels: await this.notionService.getPage(communicationID),
+            };
+          })
+        )
+      )
     );
 
     return workingDaysWithCommunicationChannels;

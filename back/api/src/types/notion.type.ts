@@ -10,6 +10,14 @@ export interface StatusObjectResponse {
   id: string;
 }
 
+export interface RelationObjectResponse {
+  id: string;
+  type: "relation";
+  relation: Array<{
+    id: string;
+  }>;
+}
+
 export interface SelectPropertyResponse {
   id: string;
   name: string;
