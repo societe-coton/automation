@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 
-import { Client } from "@notionhq/client";
 import {
   BlockObjectResponse,
   ChildDatabaseBlockObjectResponse,
@@ -29,14 +28,10 @@ import {
 // This service gets all working days and send an email of daily recap to the client
 @Injectable()
 export class ReviewService {
-  private notion: Client;
-
   constructor(
     private readonly configService: ConfigService,
     private readonly notionService: NotionService
-  ) {
-    this.notion = new Client({ auth: process.env.NOTION_KEY });
-  }
+  ) {}
 
   async getNotSentWorkingDays() {
     // 1. Get all Notion DB

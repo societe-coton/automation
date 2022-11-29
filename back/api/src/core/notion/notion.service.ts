@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 
 import { Client, NotionErrorCode } from "@notionhq/client";
 import {
@@ -10,8 +11,10 @@ import {
 @Injectable()
 export class NotionService {
   private notion: Client;
-  constructor() {
-    this.notion = new Client({ auth: process.env.NOTION_KEY });
+  constructor(private readonly configService: ConfigService) {
+    const auth = this.configService.get<string>("notion.token");
+
+    this.notion = new Client({ auth });
   }
 
   async getDatabase(database_id: string): Promise<PageObjectResponse[]> {
