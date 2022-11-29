@@ -1,12 +1,14 @@
 import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
 
 import { PrismaService } from "./prisma.service";
 
-import { GitController } from "./core/git/git.controller";
+import { CoreModule } from "./core/core.module";
+import configuration from "config/configuration";
 
 @Module({
-  imports: [],
-  controllers: [GitController],
+  imports: [ConfigModule.forRoot({ isGlobal: true, load: [configuration] }), CoreModule],
+  controllers: [],
   providers: [PrismaService],
 })
 export class AppModule {}
