@@ -7,8 +7,8 @@ export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
   @Get()
   async sendReviewToClient() {
-    const notSentWorkingDays = await this.reviewService.getNotSentWorkingDays();
+    const unsentWorkingDays = await this.reviewService.getNotSentWorkingDays();
 
-    return notSentWorkingDays;
+    return unsentWorkingDays;
   }
 }

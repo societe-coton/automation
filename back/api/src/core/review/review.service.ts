@@ -5,7 +5,6 @@ import { Client, NotionErrorCode } from "@notionhq/client";
 import {
   BlockObjectResponse,
   ChildDatabaseBlockObjectResponse,
-  DatabaseObjectResponse,
   Heading1BlockObjectResponse,
   ListBlockChildrenResponse,
   PageObjectResponse,
@@ -13,7 +12,14 @@ import {
   TextRichTextItemResponse,
 } from "@notionhq/client/build/src/api-endpoints";
 
-import { PAGES, PROJECT_STATUS, SENT_TO_CLIENT, WIP, WORKING_DAYS } from "src/const/const.notion";
+import {
+  COMMUNICATION_CHANNELS,
+  PAGES,
+  PROJECT_STATUS,
+  SENT_TO_CLIENT,
+  WIP,
+  WORKING_DAYS,
+} from "src/const/const.notion";
 import { SelectObjectResponse, StatusObjectResponse } from "src/types/notion.type";
 
 // This service gets all working days and send an email of daily recap to the client
@@ -40,12 +46,17 @@ export class ReviewService {
       .then((result: QueryDatabaseResponse) => result.results as unknown as PageObjectResponse[]);
 
     // 2. Filter clients Coton is actually working with
+
     const currentClientsPages: PageObjectResponse[] = databases.filter(
       (data: PageObjectResponse) => {
         const projectStatus = data.properties[PROJECT_STATUS] as SelectObjectResponse;
         const select = projectStatus.select;
 
-        return select.name === WIP;
+        return (
+          select.name === WIP &&
+          //TODO: url filter is only for dev mode
+          data.url === "https://www.notion.so/Coton-3ad619fe6bec41ca8106e736ec666a43"
+        );
       }
     );
 
@@ -112,22 +123,31 @@ export class ReviewService {
           .then((result) => result.results as PageObjectResponse[])
       )
     );
-    const workingDays: PageObjectResponse[] = workingDaysPages.flatMap((e) => e);
 
-    const notSentWorkingDays = workingDays.filter((workingDay) => {
-      const status = workingDay.properties[SENT_TO_CLIENT] as StatusObjectResponse;
+    const notSentWorkingDays: PageObjectResponse[][] = workingDaysPages.map((e) =>
+      e.filter((workingDay) => {
+        const status = workingDay.properties[SENT_TO_CLIENT] as StatusObjectResponse;
 
-      return status?.status.name === "Not Sent";
-    });
-
-    const workingDaysID = notSentWorkingDays.map((workingDay) => workingDay.id);
-
-    const wdb = await Promise.all(
-      workingDaysID.map((block_id) =>
-        this.notion.blocks.children.list({ block_id }).then((result) => result)
-      )
+        return status?.status.name === "Not Sent";
+      })
     );
 
-    return wdb;
+    const workingDaysWithCommunicationChannels = notSentWorkingDays.map((workingDay) =>
+      workingDay.map((wd) => {
+        return { id: wd.id, communicationChannels: wd.properties[COMMUNICATION_CHANNELS] };
+      })
+    );
+
+    return workingDaysWithCommunicationChannels;
+
+    // const workingDaysBlocks: BlockObjectResponse[][] = await Promise.all(
+    //   workingDaysID.map((block_id) =>
+    //     this.notion.blocks.children
+    //       .list({ block_id })
+    //       .then((result) => result.results as BlockObjectResponse[])
+    //   )
+    // );
+
+    // return workingDaysBlocks;
   }
 }
