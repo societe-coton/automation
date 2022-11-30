@@ -131,15 +131,5 @@ export class ReviewService {
     );
 
     return workingDaysWithCommunicationChannels;
-
-    // const workingDaysBlocks: BlockObjectResponse[][] = await Promise.all(
-    //   workingDaysID.map((block_id) =>
-    //     this.notion.blocks.children
-    //       .list({ block_id })
-    //       .then((result) => result.results as BlockObjectResponse[])
-    //   )
-    // );
-
-    // return workingDaysBlocks;
   }
 }
