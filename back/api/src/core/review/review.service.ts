@@ -51,11 +51,11 @@ export class ReviewService {
       (data: PageObjectResponse) => {
         const projectStatus = data.properties[PROJECT_STATUS] as SelectObjectResponse;
         const select = projectStatus.select;
-        //TODO: url filter is only for dev mode
-        const url = data.url;
+
         return (
           select.name === WIP &&
-          url === "https://www.notion.so/Coton-3ad619fe6bec41ca8106e736ec666a43"
+          //TODO: url filter is only for dev mode
+          data.url === "https://www.notion.so/Coton-3ad619fe6bec41ca8106e736ec666a43"
         );
       }
     );
