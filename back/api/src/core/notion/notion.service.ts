@@ -22,10 +22,10 @@ export class NotionService {
       .query({
         database_id,
       })
+      .then((result: QueryDatabaseResponse) => result.results as unknown as PageObjectResponse[])
       .catch((error: NotionErrorCode) => {
         throw new Error(`Connexion à l'API Notion impossible : ${error}`);
-      })
-      .then((result: QueryDatabaseResponse) => result.results as unknown as PageObjectResponse[]);
+      });
   }
 
   async getManyDatabase(pagesID: string[], filter?: any): Promise<PageObjectResponse[][]> {
@@ -37,20 +37,20 @@ export class NotionService {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             filter,
           })
+          .then((result) => result.results as PageObjectResponse[])
           .catch((error: NotionErrorCode) => {
             throw new Error(`Connexion à l'API Notion impossible : ${error}`);
           })
-          .then((result) => result.results as PageObjectResponse[])
       )
     );
   }
   async getBlock<T>(block_id: string): Promise<T[]> {
     return this.notion.blocks.children
       .list({ block_id })
+      .then((result: ListBlockChildrenResponse) => result.results as unknown as T[])
       .catch((error: NotionErrorCode) => {
         throw new Error(`Connexion à l'API Notion impossible : ${error}`);
-      })
-      .then((result: ListBlockChildrenResponse) => result.results as unknown as T[]);
+      });
   }
 
   async getManyBlock<T>(pagesID: string[]): Promise<T[][]> {
@@ -58,10 +58,10 @@ export class NotionService {
       pagesID.map((block_id) =>
         this.notion.blocks.children
           .list({ block_id })
+          .then((result: ListBlockChildrenResponse) => result.results as unknown as T[])
           .catch((error: NotionErrorCode) => {
             throw new Error(`Connexion à l'API Notion impossible : ${error}`);
           })
-          .then((result: ListBlockChildrenResponse) => result.results as unknown as T[])
       )
     );
   }

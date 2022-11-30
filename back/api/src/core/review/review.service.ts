@@ -13,8 +13,10 @@ import { NotionService } from "../notion/notion.service";
 
 import {
   COMMUNICATION_CHANNELS,
+  CREATED_TIME,
   PAGES,
   PROJECT_STATUS,
+  READY_TO_SEND,
   SENT_TO_CLIENT,
   WIP,
   WORKING_DAYS,
@@ -94,7 +96,7 @@ export class ReviewService {
 
     // Get Working Days
     const filter = {
-      timestamp: "created_time",
+      timestamp: CREATED_TIME,
       created_time: { past_week: {} },
     };
     const workingDaysPages: PageObjectResponse[][] = await this.notionService.getManyDatabase(
@@ -106,15 +108,15 @@ export class ReviewService {
       e.filter((workingDay) => {
         const status = workingDay.properties[SENT_TO_CLIENT] as StatusObjectResponse;
 
-        return status?.status.name === "Not Sent";
+        return status?.status.name === READY_TO_SEND;
       })
     );
 
     const workingDaysWithCommunicationChannels = await Promise.all(
-      notSentWorkingDays.map((workingDay) =>
+      notSentWorkingDays.map((workingDays) =>
         Promise.all(
-          workingDay.map(async (wd) => {
-            const communicationChannel = wd.properties[
+          workingDays.map(async (workingDay) => {
+            const communicationChannel = workingDay.properties[
               COMMUNICATION_CHANNELS
             ] as RelationObjectResponse;
 
@@ -122,7 +124,7 @@ export class ReviewService {
             if (!communicationID) return;
 
             return {
-              content: await this.notionService.getBlock(wd.id),
+              content: await this.notionService.getBlock(workingDay.id),
               communicationChannels: await this.notionService.getPage(communicationID),
             };
           })
