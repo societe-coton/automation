@@ -11,9 +11,7 @@ export class ReviewController {
   ) {}
   @Get()
   async sendReviewToClient() {
-    return this.mailService.sendMail();
-
-    // const unsentWorkingDays = await this.reviewService.getNotSentWorkingDays();
-    // return unsentWorkingDays;
+    const unsentWorkingDays = await this.reviewService.getNotSentWorkingDays();
+    return unsentWorkingDays;
   }
 }
