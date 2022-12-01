@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 
 import { GitlabService } from "./git/git.service";
+import { MailService } from "./mail/mail.service";
 import { NotionService } from "./notion/notion.service";
 import { ReviewService } from "./review/review.service";
 
@@ -10,6 +11,6 @@ import { ReviewController } from "./review/review.controller";
 @Module({
   imports: [],
   controllers: [ReviewController, GitController],
-  providers: [ReviewService, GitlabService, NotionService],
+  providers: [ReviewService, GitlabService, NotionService, MailService],
 })
 export class CoreModule {}

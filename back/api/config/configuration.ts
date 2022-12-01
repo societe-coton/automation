@@ -5,5 +5,7 @@ export default () => ({
   },
   sendinblue: {
     token: process.env.SENDINBLUE_KEY,
+    email: process.env.SENDINBLUE_SENDER_EMAIL,
+    name: process.env.SENDINBLUE_SENDER_NAME,
   },
 });
