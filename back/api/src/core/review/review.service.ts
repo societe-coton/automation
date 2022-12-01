@@ -9,8 +9,11 @@ import {
   TextRichTextItemResponse,
 } from "@notionhq/client/build/src/api-endpoints";
 
+import { flattenDeep } from "lodash";
+
 import { NotionService } from "../notion/notion.service";
 
+import { WorkingDay } from "src/class/workingDay";
 import {
   COMMUNICATION_CHANNELS,
   CREATED_TIME,
@@ -36,14 +39,14 @@ export class ReviewService {
   ) {}
 
   async getNotSentWorkingDays() {
-    // 1. Get all Notion DB
+    // 1. Get "Suivi Clients" Notion DB
     const database_id = this.configService.get<string>("notion.databaseID");
     if (!database_id) throw new Error("No database ID found in config file");
 
-    const databases: PageObjectResponse[] = await this.notionService.getDatabase(database_id);
+    const database: PageObjectResponse[] = await this.notionService.getDatabase(database_id);
 
     // 2. Filter clients Coton is actually working with
-    const currentClientsPages: PageObjectResponse[] = databases.filter(
+    const currentClientsPageList: PageObjectResponse[] = database.filter(
       (data: PageObjectResponse) => {
         const projectStatus = data.properties[PROJECT_STATUS] as SelectObjectResponse;
         const select = projectStatus.select;
@@ -57,32 +60,35 @@ export class ReviewService {
     );
 
     // Get ID for each page
-    const pagesID: string[] = currentClientsPages.map((page) => page.id);
-    const currentClientsBlocks: BlockObjectResponse[][] = await this.notionService.getManyBlock(
-      pagesID
+    const pagesIDList: string[] = currentClientsPageList.map((page) => page.id);
+    const rawCurrentClientsBlocks = await this.notionService.getManyBlock<BlockObjectResponse>(
+      pagesIDList
     );
-    const flattenedBlocks = currentClientsBlocks.flatMap((e) => e);
+
+    const currentClientBlocks = rawCurrentClientsBlocks.flat();
 
     // 3. Get everything inside "Pages" dropdown menu
     // Get all blocks having a heading
-    const headingBlocks: BlockObjectResponse[] = flattenedBlocks.filter(
+    const headingBlocks: BlockObjectResponse[] = currentClientBlocks.filter(
       (block: Heading1BlockObjectResponse) => block.heading_1
     );
 
     // Filter all blocks having "Pages" as heading name
-    const pagesBlock = headingBlocks.filter((block: Heading1BlockObjectResponse) => {
+    const blockWithPagesH1 = headingBlocks.filter((block: Heading1BlockObjectResponse) => {
       const richText = block.heading_1.rich_text[0] as TextRichTextItemResponse;
       return richText.text.content === PAGES;
     });
 
     // Getting ID's
-    const pagesBlockID: string[] = pagesBlock.map((pb) => pb.id).filter((e) => !!e.length);
+    const pagesBlockIDList: string[] = blockWithPagesH1
+      .map((pb) => pb.id)
+      .filter((e) => !!e.length);
 
     // Finding pages by I
     const pages = await this.notionService.getManyBlock<ChildDatabaseBlockObjectResponse>(
-      pagesBlockID
+      pagesBlockIDList
     );
-    const flattenedPages = pages.flatMap((e) => e);
+    const flattenedPages = pages.flat();
 
     // 4. Get "Working Days" calendar block
     // Filter every page having a child_database
@@ -94,44 +100,56 @@ export class ReviewService {
     );
     const pagesWithWorkingDaysID = pagesWithWorkingDays.map((p) => p.id);
 
-    // Get Working Days
+    // Get Working Days Databases
     const filter = {
       timestamp: CREATED_TIME,
       created_time: { past_week: {} },
     };
-    const workingDaysPages: PageObjectResponse[][] = await this.notionService.getManyDatabase(
+    const workingDaysDatabases: PageObjectResponse[][] = await this.notionService.getManyDatabase(
       pagesWithWorkingDaysID,
       filter
     );
 
-    const notSentWorkingDays: PageObjectResponse[][] = workingDaysPages.map((e) =>
-      e.filter((workingDay) => {
-        const status = workingDay.properties[SENT_TO_CLIENT] as StatusObjectResponse;
+    // Filter by "Ready To Send"
+    const readyToSendWorkingDays: PageObjectResponse[] = workingDaysDatabases
+      .map((e) =>
+        e.filter((workingDay) => {
+          const status = workingDay.properties[SENT_TO_CLIENT] as StatusObjectResponse;
 
-        return status?.status.name === READY_TO_SEND;
-      })
-    );
-
-    const workingDaysWithCommunicationChannels = await Promise.all(
-      notSentWorkingDays.map((workingDays) =>
-        Promise.all(
-          workingDays.map(async (workingDay) => {
-            const communicationChannel = workingDay.properties[
-              COMMUNICATION_CHANNELS
-            ] as RelationObjectResponse;
-
-            const communicationID = communicationChannel.relation[0]?.id;
-            if (!communicationID) return;
-
-            return {
-              content: await this.notionService.getBlock(workingDay.id),
-              communicationChannels: await this.notionService.getPage(communicationID),
-            };
-          })
-        )
+          return status?.status.name === READY_TO_SEND;
+        })
       )
+      .flat();
+
+    // Get ...
+    const workingDaysToPromise: WorkingDay[] = readyToSendWorkingDays.map(
+      (workingDay: PageObjectResponse): WorkingDay => {
+        const communicationChannel = workingDay.properties[
+          COMMUNICATION_CHANNELS
+        ] as RelationObjectResponse;
+        const communicationID = communicationChannel.relation[0]?.id;
+        if (!communicationID) return;
+
+        const wd: WorkingDay = new WorkingDay(workingDay);
+
+        const contentPromise = this.notionService.getBlock<BlockObjectResponse>(workingDay.id);
+        const communicationChannelsPromise = this.notionService.getPage(communicationID);
+
+        void wd.setContentPromise(contentPromise);
+        void wd.setCommunicationChannelsPromise(communicationChannelsPromise);
+
+        return wd;
+      }
     );
 
-    return workingDaysWithCommunicationChannels;
+    const flattenedWorkingDaysToPromise: WorkingDay[] = flattenDeep(
+      workingDaysToPromise
+    ) as WorkingDay[];
+
+    const workingsCompleted: WorkingDay[] = await Promise.all(
+      flattenedWorkingDaysToPromise.filter((e) => e).map((wd) => wd.computeContentPromise())
+    );
+
+    return workingsCompleted;
   }
 }
