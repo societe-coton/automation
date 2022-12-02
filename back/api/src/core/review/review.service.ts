@@ -9,8 +9,6 @@ import {
   TextRichTextItemResponse,
 } from "@notionhq/client/build/src/api-endpoints";
 
-import { flattenDeep } from "lodash";
-
 import { NotionService } from "../notion/notion.service";
 
 import { WorkingDay } from "src/class/workingDay";
@@ -95,61 +93,58 @@ export class ReviewService {
     const pagesWithChildDatabase: ChildDatabaseBlockObjectResponse[] = flattenedPages.filter(
       (p) => p.child_database
     );
+    // Filter every page whose title is "Working Days"
     const pagesWithWorkingDays = pagesWithChildDatabase.filter(
       (page: ChildDatabaseBlockObjectResponse) => page.child_database.title === WORKING_DAYS
     );
-    const pagesWithWorkingDaysID = pagesWithWorkingDays.map((p) => p.id);
+    // Get their ID's
+    const pagesWithWorkingDaysIDList = pagesWithWorkingDays.map((p) => p.id);
 
     // Get Working Days Databases
     const filter = {
       timestamp: CREATED_TIME,
       created_time: { past_week: {} },
     };
-    const workingDaysDatabases: PageObjectResponse[][] = await this.notionService.getManyDatabase(
-      pagesWithWorkingDaysID,
-      filter
-    );
+    const rawWorkingDaysDatabases: PageObjectResponse[][] =
+      await this.notionService.getManyDatabase(pagesWithWorkingDaysIDList, filter);
 
     // Filter by "Ready To Send"
-    const readyToSendWorkingDays: PageObjectResponse[] = workingDaysDatabases
-      .map((e) =>
-        e.filter((workingDay) => {
-          const status = workingDay.properties[SENT_TO_CLIENT] as StatusObjectResponse;
+    const workingDaysDatabases: PageObjectResponse[] = rawWorkingDaysDatabases.flat();
 
-          return status?.status.name === READY_TO_SEND;
-        })
-      )
-      .flat();
+    const readyToSendWorkingDays = workingDaysDatabases.filter((workingDay) => {
+      const status = workingDay.properties[SENT_TO_CLIENT] as StatusObjectResponse;
 
-    // Get ...
-    const workingDaysToPromise: WorkingDay[] = readyToSendWorkingDays.map(
+      return status?.status.name === READY_TO_SEND;
+    });
+
+    // Get Working Days Content and Communication Channel
+    const rawWorkingDaysToPromise: WorkingDay[] = readyToSendWorkingDays.map(
       (workingDay: PageObjectResponse): WorkingDay => {
+        // Get Communication channel ID
         const communicationChannel = workingDay.properties[
           COMMUNICATION_CHANNELS
         ] as RelationObjectResponse;
         const communicationID = communicationChannel.relation[0]?.id;
         if (!communicationID) return;
 
-        const wd: WorkingDay = new WorkingDay(workingDay);
+        const workingDayToPromise: WorkingDay = new WorkingDay(workingDay);
 
         const contentPromise = this.notionService.getBlock<BlockObjectResponse>(workingDay.id);
         const communicationChannelsPromise = this.notionService.getPage(communicationID);
 
-        void wd.setContentPromise(contentPromise);
-        void wd.setCommunicationChannelsPromise(communicationChannelsPromise);
+        void workingDayToPromise.setContentPromise(contentPromise);
+        void workingDayToPromise.setCommunicationChannelsPromise(communicationChannelsPromise);
 
-        return wd;
+        return workingDayToPromise;
       }
     );
 
-    const flattenedWorkingDaysToPromise: WorkingDay[] = flattenDeep(
-      workingDaysToPromise
-    ) as WorkingDay[];
+    const workingDaysToPromise: WorkingDay[] = rawWorkingDaysToPromise.flat();
 
-    const workingsCompleted: WorkingDay[] = await Promise.all(
-      flattenedWorkingDaysToPromise.filter((e) => e).map((wd) => wd.computeContentPromise())
+    const workingDays: WorkingDay[] = await Promise.all(
+      workingDaysToPromise.filter((e) => e).map((wd) => wd.computePromise())
     );
 
-    return workingsCompleted;
+    return workingDays;
   }
 }
