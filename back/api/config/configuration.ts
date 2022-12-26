@@ -8,4 +8,7 @@ export default () => ({
     email: process.env.SENDINBLUE_SENDER_EMAIL,
     name: process.env.SENDINBLUE_SENDER_NAME,
   },
+  slack: {
+    token: process.env.SLACK_BOT_KEY,
+  },
 });

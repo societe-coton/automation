@@ -1,16 +1,19 @@
+import { HttpModule } from "@nestjs/axios";
 import { Module } from "@nestjs/common";
 
 import { GitlabService } from "./git/git.service";
 import { MailService } from "./mail/mail.service";
 import { NotionService } from "./notion/notion.service";
 import { ReviewService } from "./review/review.service";
+import { SlackService } from "./slack/slack.service";
 
 import { GitController } from "./git/git.controller";
 import { ReviewController } from "./review/review.controller";
+import { SlackController } from "./slack/slack.controller";
 
 @Module({
-  imports: [],
-  controllers: [ReviewController, GitController],
-  providers: [ReviewService, GitlabService, NotionService, MailService],
+  imports: [HttpModule],
+  controllers: [ReviewController, GitController, SlackController],
+  providers: [ReviewService, GitlabService, NotionService, MailService, SlackService],
 })
 export class CoreModule {}
