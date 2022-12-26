@@ -12,6 +12,25 @@ export class ReviewController {
   @Get()
   async sendReviewToClient() {
     const unsentWorkingDays = await this.reviewService.getNotSentWorkingDays();
-    return unsentWorkingDays;
+
+    return unsentWorkingDays.map((workingDay) => {
+      const platform = workingDay.communicationChannel.platform;
+      switch (platform) {
+        case "email":
+          return workingDay.communicationChannel.address.forEach((address) =>
+            this.mailService.sendMail(address)
+          );
+        case "slack":
+          break;
+        case "whatsapp":
+          break;
+        case "teams":
+          break;
+        case "google-chat":
+          break;
+        default:
+          throw new Error("No platform found");
+      }
+    });
   }
 }

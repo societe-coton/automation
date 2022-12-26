@@ -1,29 +1,52 @@
 import {
   BlockObjectResponse,
-  GetPageResponse,
+  EmailPropertyItemObjectResponse,
   PageObjectResponse,
 } from "@notionhq/client/build/src/api-endpoints";
 
+import { EMAIL, PLATEFORM } from "src/const/const.notion";
+import { SelectObjectResponse } from "src/types/notion.type";
+
 export class WorkingDay {
   public id: string;
-  private content: BlockObjectResponse[];
-  private communicationChannels: GetPageResponse;
+  public content: BlockObjectResponse[];
+  private communicationChannelPage: PageObjectResponse;
   private contentPromise?: Promise<BlockObjectResponse[]>;
-  private comunnicationChannelsPromise?: Promise<GetPageResponse>;
+  private communnicationChannelPromise?: Promise<PageObjectResponse>;
+
+  public communicationChannel: CommunicationChannel;
 
   constructor(workingDay: PageObjectResponse) {
     this.id = workingDay?.id;
   }
 
-  async computePromise() {
+  public setContentPromise = (promise: Promise<BlockObjectResponse[]>) =>
+    (this.contentPromise = promise);
+  public setCommunicationChannelsPromise = (promise: Promise<PageObjectResponse>) => {
+    this.communnicationChannelPromise = promise;
+  };
+  public async computePromise() {
     this.content = await this.contentPromise;
-    this.communicationChannels = await this.comunnicationChannelsPromise;
+    this.communicationChannelPage = await this.communnicationChannelPromise;
 
+    this.getCommunicationChannel();
     return this;
   }
+  private getCommunicationChannel = () => {
+    const communicationChannelPage = this.communicationChannelPage;
+    const plateform = communicationChannelPage.properties[PLATEFORM] as SelectObjectResponse;
+    const plateformName = plateform.select.name;
 
-  setContentPromise = (promise: Promise<BlockObjectResponse[]>) => (this.contentPromise = promise);
-  setCommunicationChannelsPromise = (promise: Promise<GetPageResponse>) => {
-    this.comunnicationChannelsPromise = promise;
+    const addresses = communicationChannelPage.properties[EMAIL] as EmailPropertyItemObjectResponse;
+    const addressName = addresses.email;
+    const address = addressName.split(" ");
+
+    this.communicationChannel = { platform: plateformName, address };
   };
+}
+
+class CommunicationChannel {
+  platform: string;
+  address: string[];
+  token?: string;
 }

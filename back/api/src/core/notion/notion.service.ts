@@ -66,9 +66,12 @@ export class NotionService {
     );
   }
 
-  async getPage(page_id: string) {
-    return this.notion.pages.retrieve({ page_id }).catch((error: NotionErrorCode) => {
-      throw new Error(`Connexion à l'API Notion impossible : ${error}`);
-    });
+  async getPage<T>(page_id: string): Promise<T> {
+    return this.notion.pages
+      .retrieve({ page_id })
+      .then((result) => result as unknown as T)
+      .catch((error: NotionErrorCode) => {
+        throw new Error(`Connexion à l'API Notion impossible : ${error}`);
+      });
   }
 }

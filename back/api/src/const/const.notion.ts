@@ -6,3 +6,5 @@ export const SENT_TO_CLIENT = "Sent To Client";
 export const COMMUNICATION_CHANNELS = "Communication channels";
 export const CREATED_TIME = "created_time";
 export const READY_TO_SEND = "Ready to Send";
+export const PLATEFORM = "Plateform";
+export const EMAIL = "Email";

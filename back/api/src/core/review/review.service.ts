@@ -36,7 +36,7 @@ export class ReviewService {
     private readonly notionService: NotionService
   ) {}
 
-  async getNotSentWorkingDays() {
+  public async getNotSentWorkingDays() {
     // 1. Get "Suivi Clients" Notion DB
     const database_id = this.configService.get<string>("notion.databaseID");
     if (!database_id) throw new Error("No database ID found in config file");
@@ -130,7 +130,8 @@ export class ReviewService {
         const workingDayToPromise: WorkingDay = new WorkingDay(workingDay);
 
         const contentPromise = this.notionService.getBlock<BlockObjectResponse>(workingDay.id);
-        const communicationChannelsPromise = this.notionService.getPage(communicationID);
+        const communicationChannelsPromise =
+          this.notionService.getPage<PageObjectResponse>(communicationID);
 
         void workingDayToPromise.setContentPromise(contentPromise);
         void workingDayToPromise.setCommunicationChannelsPromise(communicationChannelsPromise);
