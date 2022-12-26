@@ -12,10 +12,11 @@ export class ReviewController {
     private readonly slackService: SlackService
   ) {}
   @Get()
-  async sendReviewToClient() {
+  sendReviewToClient() {
     // const unsentWorkingDays = await this.reviewService.getNotSentWorkingDays();
     // return unsentWorkingDays;
-    const res = await this.slackService.sendSlackMessage();
+    const res = this.slackService.sendSlackMessage();
+
     return res;
   }
 }

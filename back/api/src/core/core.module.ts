@@ -9,10 +9,11 @@ import { SlackService } from "./slack/slack.service";
 
 import { GitController } from "./git/git.controller";
 import { ReviewController } from "./review/review.controller";
+import { SlackController } from "./slack/slack.controller";
 
 @Module({
   imports: [HttpModule],
-  controllers: [ReviewController, GitController],
+  controllers: [ReviewController, GitController, SlackController],
   providers: [ReviewService, GitlabService, NotionService, MailService, SlackService],
 })
 export class CoreModule {}
