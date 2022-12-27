@@ -9,7 +9,9 @@ import { SelectObjectResponse } from "src/types/notion.type";
 
 export class WorkingDay {
   public id: string;
+  public url: string;
   public content: BlockObjectResponse[];
+
   private communicationChannelPage: PageObjectResponse;
   private contentPromise?: Promise<BlockObjectResponse[]>;
   private communnicationChannelPromise?: Promise<PageObjectResponse>;
@@ -18,6 +20,7 @@ export class WorkingDay {
 
   constructor(workingDay: PageObjectResponse) {
     this.id = workingDay?.id;
+    this.url = workingDay?.url;
   }
 
   public setContentPromise = (promise: Promise<BlockObjectResponse[]>) =>

@@ -36,7 +36,7 @@ export class ReviewService {
     private readonly notionService: NotionService
   ) {}
 
-  public async getNotSentWorkingDays() {
+  public async getNotSentWorkingDays(): Promise<WorkingDay[]> {
     // 1. Get "Suivi Clients" Notion DB
     const database_id = this.configService.get<string>("notion.databaseID");
     if (!database_id) throw new Error("No database ID found in config file");
@@ -139,7 +139,6 @@ export class ReviewService {
         return workingDayToPromise;
       }
     );
-
     const workingDaysToPromise: WorkingDay[] = rawWorkingDaysToPromise.flat();
 
     const workingDays: WorkingDay[] = await Promise.all(
