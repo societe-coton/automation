@@ -17,9 +17,9 @@ export class ReviewController {
       const platform = workingDay.communicationChannel.platform;
       switch (platform) {
         case "email":
-          // workingDay.communicationChannel.address.forEach(
-          //   async (address) => await this.mailService.sendMail(address)
-          // );
+          workingDay.communicationChannel.address.forEach(
+            async (address) => await this.mailService.sendMail(address)
+          );
           break;
         case "slack":
           break;
