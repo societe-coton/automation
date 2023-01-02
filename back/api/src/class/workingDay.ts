@@ -5,7 +5,7 @@ import {
 } from "@notionhq/client/build/src/api-endpoints";
 
 import { EMAIL, PLATEFORM } from "src/const/const.notion";
-import { formatContent } from "src/helpers/notion.helper";
+import { formatBlockContentToHtml } from "src/helpers/notion.helper";
 import { SelectObjectResponse } from "src/types/notion.type";
 
 export class WorkingDay {
@@ -35,7 +35,7 @@ export class WorkingDay {
     this.communicationChannelPage = await this.communnicationChannelPromise;
 
     this.getCommunicationChannel();
-    this.formattedContent = formatContent(this.content);
+    this.formattedContent = formatBlockContentToHtml(this.content);
 
     return this;
   }

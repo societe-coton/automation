@@ -6,7 +6,7 @@ import axios from "axios";
 @Injectable()
 export class MailService {
   constructor(private readonly configService: ConfigService) {}
-  async sendMail(email: string, content: string): Promise<boolean> {
+  async sendMail(email: string, htmlContent: string): Promise<boolean> {
     const url = this.configService.get<string>("sendinblue.url");
     const token = this.configService.get<string>("sendinblue.token");
     const senderEmail = this.configService.get<string>("sendinblue.email");
@@ -17,7 +17,7 @@ export class MailService {
       sender: { email: senderEmail, name: senderName },
       to: [{ email, name: "Client" }],
       subject,
-      htmlContent: `<html>${content}</html>`,
+      htmlContent,
     };
 
     const headers = {

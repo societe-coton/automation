@@ -124,6 +124,7 @@ export class ReviewService {
         const communicationChannel = workingDay.properties[
           COMMUNICATION_CHANNELS
         ] as RelationObjectResponse;
+
         const communicationID = communicationChannel.relation[0]?.id;
         if (!communicationID) return;
 
