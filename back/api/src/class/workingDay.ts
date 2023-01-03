@@ -48,8 +48,8 @@ export class WorkingDay {
   };
 }
 
-class CommunicationChannel {
+type CommunicationChannel = {
   platform: string;
   address: string[];
   token?: string;
-}
+};

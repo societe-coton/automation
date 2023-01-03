@@ -11,10 +11,12 @@ export class MailService {
     const token = this.configService.get<string>("sendinblue.token");
     const senderEmail = this.configService.get<string>("sendinblue.email");
     const senderName = this.configService.get<string>("sendinblue.name");
+    const date = new Date().toUTCString();
+    const subject = `COTON | Working Day | ${date}`;
     const data = {
       sender: { email: senderEmail, name: senderName },
-      to: [{ email, name: "Working Day" }],
-      subject: "Coucou",
+      to: [{ email, name: "Client" }],
+      subject,
       htmlContent: "<html><h1>Coucou</h1></html>",
     };
 
