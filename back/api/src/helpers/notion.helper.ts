@@ -28,6 +28,7 @@ const formatTextToHtmlTag = (text: RichTextItemResponse[], type: string): string
 
     let textWithTags: string;
 
+    // First switch statement adds inline tags
     switch (true) {
       case annotations.bold:
         textWithTags = addTags(text, "b", color);
@@ -55,6 +56,7 @@ const formatTextToHtmlTag = (text: RichTextItemResponse[], type: string): string
 
   let textWithTags: string;
 
+  // Second switch statement adds block tags
   switch (type) {
     case "bulleted_list_item":
       textWithTags = addTags(joinedText, "li");
