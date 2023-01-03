@@ -75,4 +75,20 @@ export class NotionService {
         throw new Error(`Connexion à l'API Notion impossible : ${error}`);
       });
   }
+
+  async updatePage(page_id: string, property: string): Promise<boolean> {
+    return this.notion.pages
+      .update({
+        page_id,
+        properties: {
+          [property]: {
+            status: {
+              name: "Sent",
+            },
+          },
+        },
+      })
+      .then(() => true)
+      .catch(() => false);
+  }
 }

@@ -148,4 +148,11 @@ export class ReviewService {
 
     return workingDays;
   }
+
+  public async updateSentToClient(workingDay: WorkingDay) {
+    const page_id = workingDay.id;
+    const property = SENT_TO_CLIENT;
+
+    return this.notionService.updatePage(page_id, property);
+  }
 }
