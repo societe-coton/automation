@@ -23,11 +23,10 @@ export class ReviewController {
           await Promise.all(
             workingDay.communicationChannel.address.map(async (address) => {
               const isSent = await this.mailService.sendMail(address, workingDay.formattedContent);
-              if (!isSent) return;
+              if (!isSent) throw new Error(`Failed to sendMail to ${address}`);
               // TODO: En plus du return, inscrire l'échec dans les logs
-              await this.reviewService.updateSentToClient(workingDay);
             })
-          );
+          ).then(async () => await this.reviewService.updateSentToClient(workingDay));
           break;
         case "slack":
           break;
