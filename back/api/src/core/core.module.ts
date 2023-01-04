@@ -1,3 +1,4 @@
+import { HttpModule } from "@nestjs/axios";
 import { Module } from "@nestjs/common";
 
 import { GitlabService } from "./git/git.service";
@@ -9,7 +10,7 @@ import { GitController } from "./git/git.controller";
 import { ReviewController } from "./review/review.controller";
 
 @Module({
-  imports: [],
+  imports: [HttpModule],
   controllers: [ReviewController, GitController],
   providers: [ReviewService, GitlabService, NotionService, MailService],
 })
