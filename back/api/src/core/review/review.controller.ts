@@ -17,14 +17,16 @@ export class ReviewController {
     // Send Working Days to matching plateform
     unsentWorkingDays.forEach(async (workingDay) => {
       const platform = workingDay.communicationChannel.platform;
-      let isSent: boolean[];
 
       switch (platform) {
         case "email":
-          isSent = await Promise.all(
-            workingDay.communicationChannel.address.map((address) =>
-              this.mailService.sendMail(address, workingDay.formattedContent)
-            )
+          await Promise.all(
+            workingDay.communicationChannel.address.map(async (address) => {
+              const isSent = await this.mailService.sendMail(address, workingDay.formattedContent);
+              if (!isSent) return;
+              // TODO: En plus du return, inscrire l'échec dans les logs
+              await this.reviewService.updateSentToClient(workingDay);
+            })
           );
           break;
         case "slack":
@@ -38,8 +40,6 @@ export class ReviewController {
         default:
           throw new Error("No platform found");
       }
-
-      if (isSent.every((val) => val)) await this.reviewService.updateSentToClient(workingDay);
     });
 
     return unsentWorkingDays;

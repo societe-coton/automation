@@ -76,17 +76,11 @@ export class NotionService {
       });
   }
 
-  async updatePage(page_id: string, property: string): Promise<boolean> {
+  async updatePage(page_id: string, properties: any): Promise<boolean> {
     return this.notion.pages
       .update({
         page_id,
-        properties: {
-          [property]: {
-            status: {
-              name: "Sent",
-            },
-          },
-        },
+        properties,
       })
       .then(() => true)
       .catch(() => false);

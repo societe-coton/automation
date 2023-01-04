@@ -17,11 +17,10 @@ import {
   CREATED_TIME,
   PAGES,
   PROJECT_STATUS,
-  READY_TO_SEND,
-  SENT_TO_CLIENT,
   WIP,
   WORKING_DAYS,
 } from "src/const/const.notion";
+import { NotionMailStatus } from "src/enum/notion.enum";
 import {
   RelationObjectResponse,
   SelectObjectResponse,
@@ -112,9 +111,9 @@ export class ReviewService {
     const workingDaysDatabases: PageObjectResponse[] = rawWorkingDaysDatabases.flat();
 
     const readyToSendWorkingDays = workingDaysDatabases.filter((workingDay) => {
-      const status = workingDay.properties[SENT_TO_CLIENT] as StatusObjectResponse;
+      const status = workingDay.properties[NotionMailStatus.SENT_TO_CLIENT] as StatusObjectResponse;
 
-      return status?.status.name === READY_TO_SEND;
+      return status?.status.name === NotionMailStatus.READY_TO_SEND;
     });
 
     // Get Working Days Content and Communication Channel
@@ -151,8 +150,14 @@ export class ReviewService {
 
   public async updateSentToClient(workingDay: WorkingDay) {
     const page_id = workingDay.id;
-    const property = SENT_TO_CLIENT;
+    const properties = {
+      [NotionMailStatus.SENT_TO_CLIENT]: {
+        status: {
+          name: "Sent",
+        },
+      },
+    };
 
-    return this.notionService.updatePage(page_id, property);
+    return this.notionService.updatePage(page_id, properties);
   }
 }
