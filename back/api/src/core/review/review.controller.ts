@@ -11,15 +11,22 @@ export class ReviewController {
   ) {}
   @Get()
   async sendReviewToClient() {
+    // Get Working Days
     const unsentWorkingDays = await this.reviewService.getNotSentWorkingDays();
 
-    unsentWorkingDays.forEach((workingDay) => {
+    // Send Working Days to matching plateform
+    unsentWorkingDays.forEach(async (workingDay) => {
       const platform = workingDay.communicationChannel.platform;
+
       switch (platform) {
         case "email":
-          workingDay.communicationChannel.address.forEach(
-            async (address) => await this.mailService.sendMail(address, workingDay.formattedContent)
-          );
+          await Promise.all(
+            workingDay.communicationChannel.address.map(async (address) => {
+              const isSent = await this.mailService.sendMail(address, workingDay.formattedContent);
+              if (!isSent) throw new Error(`Failed to sendMail to ${address}`);
+              // TODO: En plus du return, inscrire l'échec dans les logs
+            })
+          ).then(async () => await this.reviewService.updateSentToClient(workingDay));
           break;
         case "slack":
           break;
@@ -33,6 +40,7 @@ export class ReviewController {
           throw new Error("No platform found");
       }
     });
+
     return unsentWorkingDays;
   }
 }
