@@ -44,6 +44,7 @@ export class NotionService {
       )
     );
   }
+
   async getBlock<T>(block_id: string): Promise<T[]> {
     return this.notion.blocks.children
       .list({ block_id })
