@@ -153,7 +153,7 @@ export class ReviewService {
     const properties = {
       [NotionMailStatus.SENT_TO_CLIENT]: {
         status: {
-          name: "Sent",
+          name: NotionMailStatus.SENT,
         },
       },
     };
