@@ -5,13 +5,13 @@ import {
 
 import { BlockType } from "src/types/notion.type";
 
-export const formatBlockContentToHtml = (content: BlockObjectResponse[]): string => {
+export const formatNotionBlockContentToHtml = (content: BlockObjectResponse[]): string => {
   const text = content.map((con: BlockObjectResponse): string => {
-    const type = con.type;
-    const blockType = con[type] as BlockType;
-    const richText = blockType.rich_text;
+    const typeName: string = con.type;
+    const blockType: BlockType = con[typeName] as BlockType;
+    const richText: RichTextItemResponse[] = blockType.rich_text;
 
-    return formatTextToHtmlTag(richText, type);
+    return formatNotionRichTextToHtmlTag(richText, typeName);
   });
 
   const formattedContent = text.join("");
@@ -19,7 +19,7 @@ export const formatBlockContentToHtml = (content: BlockObjectResponse[]): string
   return `<html>${formattedContent}</html>`;
 };
 
-const formatTextToHtmlTag = (text: RichTextItemResponse[], type: string): string => {
+const formatNotionRichTextToHtmlTag = (text: RichTextItemResponse[], type: string): string => {
   const formattedText = text.map((t: RichTextItemResponse): string => {
     const text = t.plain_text;
 
